@@ -1,0 +1,33 @@
+@startuml 06-fio-suggest
+!include _style.iuml
+
+title 06. Подсказка ФИО с отсечением имён по полу (пакет Checkr.Suggest)
+
+autonumber
+actor "Пользователь" as U
+participant "Форма профиля\n(Blazor, Checkr.Web)" as UI
+participant "FioSuggester" as FS
+participant "GenderDetector" as G
+database "OpenSearch\nиндекс names" as OS
+
+U -> UI : Вводит «Адмакин Ал»
+UI -> FS : Suggest("Адмакин Ал")
+FS -> FS : Разбить: фамилия «Адмакин», дописывается «Ал»
+FS -> G : Detect(фамилия = «Адмакин»)
+G -> OS : Есть «Адмакин» в словаре фамилий?
+OS --> G : нет
+G --> FS : окончание «-ин» → Male
+FS -> OS : prefix «ал», type = FirstName,\ngender = Male
+OS --> FS : Александр, Алексей, Альберт
+FS --> UI : «Адмакин Александр», «Адмакин Алексей», …
+UI --> U : Подсказки без женских имён
+
+note over G
+  Правила по порядку надёжности:
+  1. Отчество: -вич / -ич → Male, -вна / -чна → Female
+  2. Имя: словарь имён
+  3. Фамилия: словарь фамилий, иначе окончание
+     -ов/-ев/-ин/-ский → Male, -ова/-ева/-ина/-ская → Female
+  Иначе Unknown (Шевченко, Черных)
+end note
+@enduml

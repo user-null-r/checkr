@@ -1,0 +1,38 @@
+@startuml 05-reminders
+!include _style.iuml
+
+title 05. Напоминание «начал, но не закончил»
+
+autonumber
+participant "ReminderJob\n(Checkr.Worker, раз в сутки)" as R
+database "PostgreSQL" as DB
+queue "RabbitMQ\nsend-reminder" as MQ
+participant "ReminderConsumer\n(Checkr.Worker)" as N
+participant "SMTP / Telegram" as OUT
+actor "Студент" as S
+
+R -> DB : Найти (студент, задача):\nесть посылки, нет AC,\nпоследняя посылка > 2 дней назад,\nдедлайн не прошёл или его нет,\nнапоминания ещё не было
+loop Каждая найденная пара
+    group Одна транзакция (outbox)
+        R -> DB : INSERT Reminder (CreatedAt)
+        R -> DB : outbox: SendReminder {userId, problemId}
+    end
+end
+R -> MQ : SendReminder (доставка из outbox)
+
+MQ -> N : SendReminder
+N -> DB : ФИО, пол, TelegramChatId, название задачи
+N -> N : «Уважаемый Иван Петрович!» / «Уважаемая Анна Сергеевна!»\n«Вы начали задачу X, но не закончили.\nВернитесь к ней, пожалуйста»
+alt Telegram привязан
+    N -> OUT : Telegram sendMessage
+else
+    N -> OUT : Письмо (MailKit)
+end
+OUT --> S : Напоминание со ссылкой на задачу
+N -> DB : UPDATE Reminder (SentAt)
+
+note over MQ, N
+  Если SMTP или Telegram недоступны —
+  повтор с паузой, затем очередь ошибок
+end note
+@enduml

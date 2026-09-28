@@ -1,0 +1,31 @@
+@startuml 01-system-context
+!include <C4/C4_Context>
+!include _style.iuml
+
+title 01. Контекст системы Checkr (C4, уровень 1)
+
+Person(student, "Студент", "Решает задачи, смотрит вердикты и рейтинг")
+Person(teacher, "Преподаватель", "Публикует задачи, назначает группам, смотрит плагиат, выгружает отчёты")
+Person(admin, "Администратор", "Управляет пользователями и ролями, имеет доступ ко всем группам и задачам")
+
+System(checkr, "Checkr", "Платформа автоматической проверки учебных заданий по программированию")
+
+System_Ext(smtp, "SMTP-сервер", "Доставка писем")
+System_Ext(tg, "Telegram Bot API", "Доставка сообщений в Telegram")
+System_Ext(gar, "ГАР (ФИАС), ФНС", "Открытые данные: справочник адресов")
+System_Ext(names, "Словари ФИО", "Открытые данные: фамилии, имена, отчества с полом")
+
+Rel(student, checkr, "Отправляет решения, получает вердикты", "HTTPS, WebSocket")
+Rel(teacher, checkr, "Управляет задачами и группами, скачивает отчёты", "HTTPS, WebSocket")
+Rel(admin, checkr, "Администрирует", "HTTPS, WebSocket")
+
+Rel(checkr, smtp, "Письма-напоминания", "SMTP")
+Rel(checkr, tg, "Напоминания, привязка аккаунта", "HTTPS")
+Rel_U(gar, checkr, "Разовый импорт", "XML")
+Rel_U(names, checkr, "Разовый импорт", "CSV")
+
+Rel(smtp, student, "E-mail")
+Rel(tg, student, "Сообщение")
+
+SHOW_LEGEND()
+@enduml

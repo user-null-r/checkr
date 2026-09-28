@@ -1,0 +1,46 @@
+@startuml 02-containers
+!include <C4/C4_Container>
+!include _style.iuml
+
+title 02. Контейнеры Checkr (C4, уровень 2)
+
+Person(user, "Студент / Преподаватель / Администратор")
+
+System_Boundary(checkr, "Checkr — docker compose, один хост") {
+    Container(proxy, "Reverse proxy", "nginx", "TLS, проксирование HTTP и WebSocket")
+    Container(web, "Checkr.Web", "ASP.NET Core 10, Blazor Server, Identity, EF Core", "UI и логика: задачи, группы, посылки, рейтинг, отчёт, подсказки ФИО/адреса, роли")
+    Container(judge, "Checkr.Judge", ".NET Worker Service", "Компиляция и запуск решений в песочнице, вердикт")
+    Container(worker, "Checkr.Worker", ".NET Worker Service", "Антиплагиат, планировщик напоминаний, письма, Telegram-бот")
+    Container(sandbox, "Песочница", "Docker на том же хосте", "Одноразовый контейнер на посылку: без сети, с лимитами")
+    Container(importer, "Checkr.Suggest.Importer", ".NET console, запускается вручную", "Загрузка ГАР и словарей ФИО")
+
+    ContainerDb(pg, "PostgreSQL 17", "Реляционная БД", "Все данные, тесты задач, outbox")
+    ContainerQueue(mq, "RabbitMQ", "AMQP", "Очереди сообщений")
+    ContainerDb(os, "OpenSearch", "Поисковый движок", "Индексы адресов и ФИО")
+}
+
+System_Ext(smtp, "SMTP")
+System_Ext(tg, "Telegram Bot API")
+
+Rel(user, proxy, "Использует", "HTTPS, WebSocket")
+Rel(proxy, web, "HTTP, WebSocket")
+
+Rel(web, pg, "Читает/пишет", "EF Core")
+Rel(web, mq, "CheckSubmission, CheckPlagiarism", "MassTransit, outbox")
+Rel(mq, web, "SubmissionJudged")
+Rel(web, os, "Подсказки", "Checkr.Suggest")
+
+Rel(mq, judge, "CheckSubmission")
+Rel(judge, mq, "SubmissionJudged")
+Rel(judge, sandbox, "Запускает", "Docker socket")
+
+Rel(mq, worker, "CheckPlagiarism, SendReminder")
+Rel(worker, mq, "SendReminder", "outbox")
+Rel(worker, pg, "Читает/пишет", "EF Core")
+Rel(worker, smtp, "Письма", "MailKit")
+Rel(worker, tg, "Сообщения, привязка", "Telegram.Bot")
+
+Rel(importer, os, "Bulk-загрузка")
+
+SHOW_LEGEND()
+@enduml

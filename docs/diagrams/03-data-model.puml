@@ -1,0 +1,108 @@
+@startuml 03-data-model
+!include _style.iuml
+
+title 03. Модель данных
+
+hide circle
+skinparam linetype ortho
+
+entity "User" as user {
+    * Id
+    --
+    * Email
+    * Role : Student | Teacher | Admin
+    * LastName, FirstName
+    MiddleName
+    * Gender : Male | Female | Unknown
+    Address
+    TelegramChatId
+}
+
+entity "TelegramLinkCode" as tlc {
+    * Code
+    --
+    * UserId
+    * ExpiresAt
+}
+
+entity "Group" as grp {
+    * Id
+    --
+    * Name
+}
+
+entity "Problem" as problem {
+    * Id
+    --
+    * Title, Statement
+    * TimeLimitMs, MemoryLimitMb
+    Deadline <<null = бессрочно>>
+    * ShareToken
+    * PlagiarismThreshold <<по умолчанию 0.8>>
+}
+
+entity "TestCase" as tc {
+    * Id
+    --
+    * ProblemId
+    * Input, ExpectedOutput
+}
+
+entity "Assignment" as asg {
+    * ProblemId
+    * GroupId
+}
+
+entity "ProblemAccess" as pa {
+    * UserId
+    * ProblemId
+    --
+    выдан по ссылке
+}
+
+entity "Submission" as sub {
+    * Id
+    --
+    * UserId, ProblemId
+    * Language, Code
+    * Status : Queued | Running | Done | Failed
+    Verdict : AC | WA | TLE | MLE | RE | CE
+    CompilerOutput
+    * CreatedAt
+}
+
+entity "TestResult" as tr {
+    * SubmissionId
+    * TestNumber
+    --
+    * Verdict, TimeMs, MemoryKb
+}
+
+entity "PlagiarismWarning" as pw {
+    * Id
+    --
+    * SubmissionId, SimilarSubmissionId
+    * Similarity
+    * Reviewed
+}
+
+entity "Reminder" as rem {
+    * UserId, ProblemId
+    --
+    * CreatedAt
+    SentAt
+}
+
+user }o--o{ grp : GroupMember
+user ||--o{ tlc
+grp ||--o{ asg
+problem ||--o{ asg
+problem ||--|{ tc
+user ||--o{ pa
+problem ||--o{ pa
+user ||--o{ sub
+problem ||--o{ sub
+sub ||--o{ tr
+sub ||--o{ pw
+user ||--o{ rem
+@enduml

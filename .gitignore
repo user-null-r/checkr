@@ -1,0 +1,41 @@
+# --- .NET ---
+bin/
+obj/
+*.user
+*.suo
+*.rsuser
+TestResults/
+*.trx
+coverage*.xml
+coverage*.json
+*.nupkg
+*.snupkg
+artifacts/
+
+# --- IDE ---
+.idea/
+.vs/
+.vscode/
+*.DotSettings.user
+
+# --- Локальные инструменты ---
+.codegraph/
+
+# --- Секреты и локальные настройки ---
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+docker-compose.override.yml
+
+# --- Документация: сгенерированные диаграммы (в репозитории только .puml) ---
+docs/**/*.svg
+docs/**/*.png
+.asciidoctor/
+
+# --- Данные для импорта (ГАР, словари ФИО) ---
+data/
+
+# --- ОС ---
+.DS_Store
+Thumbs.db

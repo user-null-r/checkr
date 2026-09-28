@@ -1,0 +1,62 @@
+@startuml 04-submission
+!include _style.iuml
+
+title 04. Отправка и проверка решения
+
+autonumber
+actor "Студент" as S
+participant "Страница задачи\n(Blazor, Checkr.Web)" as UI
+participant "Checkr.Web" as WEB
+database "PostgreSQL" as DB
+queue "RabbitMQ" as MQ
+participant "Checkr.Judge" as J
+participant "Контейнер\nпесочницы" as C
+participant "Checkr.Worker" as W
+
+S -> UI : Отправить решение
+UI -> WEB : Отправка
+WEB -> WEB : Есть доступ? Дедлайн не прошёл?
+group Одна транзакция (outbox)
+    WEB -> DB : INSERT Submission (Queued)
+    WEB -> DB : outbox: CheckSubmission {код, язык, лимиты, тесты}
+end
+UI -> WEB : Подписаться на обновления посылки
+UI -> WEB : Прочитать текущий статус\n(вдруг вердикт уже пришёл)
+WEB -> MQ : CheckSubmission (доставка из outbox)
+
+MQ -> J : CheckSubmission
+J -> C : docker create ~--network none ~--memory ~--cpus 1 ~--pids-limit\ndocker cp: код, тесты, runner
+J -> C : docker start
+alt Язык C#, ошибка компиляции
+    C --> J : вывод компилятора
+    J -> J : Вердикт CE
+else Скомпилировано (или Python)
+    loop Каждый тест (runner внутри контейнера)
+        C -> C : timeout TL: запуск, stdin = input
+        C -> C : Сравнить с ответом → AC / WA / TLE / MLE / RE
+    end
+    C --> J : Результаты по тестам
+end
+J -> C : docker rm
+J -> MQ : SubmissionJudged {вердикт, результаты, вывод компилятора}
+
+MQ -> WEB : SubmissionJudged
+group Одна транзакция (outbox)
+    WEB -> DB : UPDATE Submission (Done), INSERT TestResult × N
+    WEB -> DB : outbox: CheckPlagiarism, если AC
+end
+WEB -->> UI : Уведомление: вердикт и результат по каждому тесту
+UI --> S : Показывает вердикт
+
+WEB -> MQ : CheckPlagiarism (доставка из outbox)
+MQ -> W : CheckPlagiarism
+W -> DB : AC-решения других студентов по задаче\n(вердикт уже записан)
+W -> W : Сравнить (коэффициент Жаккара)
+W -> DB : INSERT PlagiarismWarning,\nесли сходство ≥ Problem.PlagiarismThreshold
+
+note over J
+  Judge не ходит в БД: всё нужное приходит в сообщении.
+  При сбое (Docker недоступен и т. п.) Judge отправляет
+  SubmissionJudged со статусом Failed.
+end note
+@enduml

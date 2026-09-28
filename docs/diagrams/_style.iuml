@@ -1,0 +1,44 @@
+' Общий стиль диаграмм Checkr. Подключается в каждой диаграмме: !include _style.iuml
+'
+' Раскладка smetana встроена в PlantUML и не требует Graphviz.
+' Если Graphviz установлен, строку с pragma можно убрать — раскладка станет аккуратнее.
+!pragma layout smetana
+
+skinparam defaultFontName "Arial"
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowColor #444444
+skinparam ArrowFontSize 11
+skinparam NoteBackgroundColor #FFF8DC
+skinparam NoteBorderColor #C8B560
+
+skinparam sequence {
+    ParticipantBackgroundColor #438DD5
+    ParticipantFontColor #FFFFFF
+    ParticipantBorderColor #2E6295
+    ActorBackgroundColor #08427B
+    ActorBorderColor #052E56
+    DatabaseBackgroundColor #85BBF0
+    QueueBackgroundColor #85BBF0
+    LifeLineBorderColor #888888
+    GroupBackgroundColor #EEF4FB
+}
+
+skinparam activity {
+    BackgroundColor #EEF4FB
+    BorderColor #2E6295
+    DiamondBackgroundColor #FFFFFF
+    DiamondBorderColor #2E6295
+}
+
+skinparam state {
+    BackgroundColor #EEF4FB
+    BorderColor #2E6295
+}
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #2E6295
+    HeaderBackgroundColor #EEF4FB
+}
