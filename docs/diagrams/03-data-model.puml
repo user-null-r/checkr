@@ -12,7 +12,7 @@ entity "User" as user {
     * Email
     * Role : Student | Teacher | Admin
     * LastName, FirstName
-    MiddleName
+    Surname
     * Gender : Male | Female | Unknown
     Address
     TelegramChatId
