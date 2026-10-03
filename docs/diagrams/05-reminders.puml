@@ -11,7 +11,7 @@ participant "ReminderConsumer\n(Checkr.Worker)" as N
 participant "SMTP / Telegram" as OUT
 actor "Студент" as S
 
-R -> DB : Найти (студент, задача):\nесть посылки, нет AC,\nпоследняя посылка > 2 дней назад,\nдедлайн не прошёл или его нет,\nнапоминания ещё не было
+R -> DB : Найти (студент, задача):\nесть посылки, нет AC,\nпоследняя посылка > 2 дней назад,\nнапоминания ещё не было
 loop Каждая найденная пара
     group Одна транзакция (outbox)
         R -> DB : INSERT Reminder (CreatedAt)

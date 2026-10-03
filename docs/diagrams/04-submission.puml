@@ -15,10 +15,10 @@ participant "Checkr.Worker" as W
 
 S -> UI : Отправить решение
 UI -> WEB : Отправка
-WEB -> WEB : Есть доступ? Дедлайн не прошёл?
+WEB -> WEB : Есть доступ?\nПосле дедлайна → IsLate = true
 group Одна транзакция (outbox)
     WEB -> DB : INSERT Submission (Queued)
-    WEB -> DB : outbox: CheckSubmission {код, язык, лимиты, тесты}
+    WEB -> DB : outbox: CheckSubmission {код, лимиты, тесты}
 end
 UI -> WEB : Подписаться на обновления посылки
 UI -> WEB : Прочитать текущий статус\n(вдруг вердикт уже пришёл)
@@ -27,10 +27,10 @@ WEB -> MQ : CheckSubmission (доставка из outbox)
 MQ -> J : CheckSubmission
 J -> C : docker create ~--network none ~--memory ~--cpus 1 ~--pids-limit\ndocker cp: код, тесты, runner
 J -> C : docker start
-alt Язык C#, ошибка компиляции
+alt Ошибка компиляции
     C --> J : вывод компилятора
     J -> J : Вердикт CE
-else Скомпилировано (или Python)
+else Скомпилировано
     loop Каждый тест (runner внутри контейнера)
         C -> C : timeout TL: запуск, stdin = input
         C -> C : Сравнить с ответом → AC / WA / TLE / MLE / RE
@@ -42,7 +42,7 @@ J -> MQ : SubmissionJudged {вердикт, результаты, вывод к�
 
 MQ -> WEB : SubmissionJudged
 group Одна транзакция (outbox)
-    WEB -> DB : UPDATE Submission (Done), INSERT TestResult × N
+    WEB -> DB : UPDATE Submission (Done, Score), INSERT TestResult × N
     WEB -> DB : outbox: CheckPlagiarism, если AC
 end
 WEB -->> UI : Уведомление: вердикт и результат по каждому тесту
